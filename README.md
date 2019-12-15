@@ -1,5 +1,5 @@
 # HttpClientLinux
-Http Client on Linux  // комментарий на русском
+Http Client on Linux  
 
 
 Сделано :
@@ -18,5 +18,21 @@ API:
 - unix sockets: send/recv
 - для парсинга Header-ов: sreambufs
 - regex - отсутствует
-
+- компилятор: g++
  
+////////////////////////////////////////////////
+
+USAGE: curl_ivb <link> [filename]
+
+example:
+curl_ivb cpk.msu.ru/files/2018/tasks/math.pdf f1.pdf
+
+///////////
+BUILD:
+
+./build.sh
+
+RUN TESTS:
+
+./runtests.sh
+
