@@ -25,7 +25,7 @@ API:
 USAGE: curl_ivb link [filename]
 
 example:
-./curl_ivb cpk.msu.ru/files/2018/tasks/math.pdf f1.pdf
+./curl_ivb    cpk.msu.ru/files/2018/tasks/math.pdf    f1.pdf
 
 ///////////
 
