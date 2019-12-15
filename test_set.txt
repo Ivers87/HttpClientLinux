@@ -1,0 +1,5 @@
+cpk.msu.ru/files/2018/tasks/math.pdf  math.pdf FooBar
+stash.compciv.org/ssa_baby_names/names.zip baby_names.zip F
+sozdavaite-sait.ru/html_sites/sozdat-sajt-v-bloknote/204-kak-sozdat-html-fayl-5-urok.html  sayt.txt F
+on-line-teaching.com/kak_sdelat_svoy_site_ot_a_do_ya/03_structura_site.html online_teach.txt F
+komissionka31.ru/file/8572_%D0%9E%D0%B1%D1%89%D0%B8%D0%B5/184184_%D0%9D%D0%BE%D0%B2%D1%8B%D0%B9_%D1%82%D0%B5%D0%BA%D1%81%D1%82%D0%BE%D0%B2%D1%8B%D0%B9_%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.txt komiss.txt F
