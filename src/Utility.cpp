@@ -1,10 +1,7 @@
 #include <stdio.h> 
-
 #include <netdb.h>
 #include <arpa/inet.h>
-
 #include <string.h> 
-
 #include "Utility.h"
 
 namespace NUtility
