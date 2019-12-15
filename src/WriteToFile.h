@@ -2,17 +2,6 @@
 #define WRITE_TO_FILE_
 
 #include <stdio.h> 
-#include <sys/socket.h> 
-
-#include <netdb.h>
-#include <sys/param.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <unistd.h> 
-#include <string.h> 
-
-#include <string> 
 #include <memory> 
 
 #include "FileTypes.h"
