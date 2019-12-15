@@ -28,6 +28,7 @@ example:
 curl_ivb cpk.msu.ru/files/2018/tasks/math.pdf f1.pdf
 
 ///////////
+
 BUILD:
 
 ./build.sh
