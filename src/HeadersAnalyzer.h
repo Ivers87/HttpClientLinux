@@ -1,7 +1,6 @@
 #ifndef HEADERS_ANALYZER__
 #define HEADERS_ANALYZER__
 
-
 #include <string>
 #include <sstream> 
 #include <algorithm>
