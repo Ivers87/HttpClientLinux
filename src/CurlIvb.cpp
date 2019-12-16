@@ -43,7 +43,7 @@ public:
         using namespace NFileWrapper;
 
         int sock = 0; 
-        CSockHandler hndlr(sock);
+        CSockHandler hndlr(sock); //обычно через BOOST_SCOPE_EXIT такие вещи делаю
         struct sockaddr_in serv_addr; 
         
         if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
