@@ -32,7 +32,7 @@ namespace
     
     void Write(const char *s, std::size_t n) override   
     {          
-        for(std::size_t i=0;;)
+        for(std::size_t i=0; i < n;)
         {
             if (m_parseError)
             {
@@ -41,20 +41,14 @@ namespace
             }
 
             if (m_readingPayload)
-            {
-                if (readingPayload(s,n,i))
-                    return;
-            }
+                readingPayload(s,n,i);
             else
-            {
-                if (readingManagedBytes(s,n,i))
-                    return;               
-            }            
+                readingManagedBytes(s,n,i);
         }  
     }
 
     private:
-        bool readingManagedBytes(const char *s, std::size_t n, std::size_t &i)
+        void readingManagedBytes(const char *s, std::size_t n, std::size_t &i)
         {
             switch(m_crlfRead)
             {
@@ -64,41 +58,35 @@ namespace
                         m_hexNumber+=s[i];
                     
                     if (i == n)
-                        return true;
+                        return;
 
                     if(m_hexNumber.size() > m_maxHexSize)
                     {
                         processParseError();
-                        return false;
+                        return ;
                     }
                     
                     m_crlfRead = 1;
-                    return false;
+                    return ;
                 }
                 case 1:
-                {
-                    if (i == n)
-                        return true;
-                    
+                {                    
                     if (s[i++] != '\r')
                     {
                         processParseError();
-                        return false;
+                        return;
                     }
 
                     m_crlfRead = 2;
-                    return false;
+                    return ;
                 }
                  
                 case 2:
-                { 
-                    if (i == n)
-                        return true;
-                    
+                {                    
                     if (s[i++] != '\n')
                     {
                         processParseError();
-                        return false;
+                        return;
                     }
 
                     m_crlfRead = 0;
@@ -110,22 +98,17 @@ namespace
                         printf("%s\n", m_hexNumber.c_str());                      
 
                     m_hexNumber.clear();
-                    return false;                    
+                    return ;                    
                 }
             }
-
-            return false;
         }
 
-        bool readingPayload(const char *s, std::size_t n, std::size_t &i)
+        void readingPayload(const char *s, std::size_t n, std::size_t &i)
         {
             switch(m_crlfRead)
             {
                 case 0:
                 {
-                    if (i == n)
-                        return true;
-
                     std::size_t bytesToFile = std::min(m_bytesLeft, n-i);
 
                     if(bytesToFile > 0)
@@ -137,44 +120,38 @@ namespace
                     if (0 == m_bytesLeft)
                         m_crlfRead = 1;
 
-                    return false;                    
+                    return;                    
                 }
 
                 case 1:
-                {
-                    if (i == n)
-                        return true;
-                    
+                {                   
                     if (s[i++] != '\r')
                     {
                         processParseError();
-                        return false;
+                        return ;
                     }
 
                     m_crlfRead = 2;
-                    return false;
+                    return ;
                 }
 
                 case 2:
-                { 
-                    if (i == n)
-                        return true;
-                    
+                {                     
                     if (s[i++]!= '\n')
                     {
                         processParseError();                        
-                        return false;
+                        return;
                     }
 
                     m_crlfRead = 0;
                     m_readingPayload = false;
 
-                    return false;                    
+                    return;                    
                 }
 
             }
 
-            return false;
+            return;
         }
 
         void processParseError()
