@@ -29,14 +29,22 @@ namespace NHeadersAnalyzer
         bool StatusGot() const
         {
             return m_gotstatus;
-        } 
+        }      
 
         NFileTypes::FileTypes GetType() const;
+
+        void Analyze()
+        {
+            analyze();
+        }
+
+        std::string GetOstatok();
+
+        bool HeadersRecieved();
     private:
         void analyze();
         void realise()
         {
-            m_ss.clear();
         }
 
         static void split(const std::string &header, std::string &name, std::string &value)
@@ -66,10 +74,12 @@ namespace NHeadersAnalyzer
 
     private:
         std::string m_s;
-        std::stringstream m_ss;
+        
 
         ETransferEncoding m_transfer_encoding ;
         bool m_gotstatus;
+        bool m_headerEnd=false;
+        std::string m_ostatok;
     };
 }
 

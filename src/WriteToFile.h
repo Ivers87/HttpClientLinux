@@ -20,10 +20,7 @@ namespace NFileWrapper
         }
 
 
-        //требования:
-        // - до &str[0] должно быть зарезервированно RESERVED байт
-        // - str[n] == '\0'
-        virtual void Write(char *str, std::size_t n) = 0;
+        virtual void Write(const char *str, std::size_t n) = 0;
 
 
         bool Init(const std::string &file)

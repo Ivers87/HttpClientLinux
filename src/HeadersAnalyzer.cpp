@@ -4,7 +4,7 @@ namespace NHeadersAnalyzer
 {
     void CHeaders::Add(const char *s, std::size_t n)
     {
-        m_ss.write(s,n);
+        m_s.append(s,n);
     }
 
     // решил для анализа хедеров использовать stringstream
@@ -17,15 +17,17 @@ namespace NHeadersAnalyzer
     {        
         m_gotstatus =true;
 
+        std::stringstream ss(m_s);
+
         std::string http_version;
-        m_ss >> http_version;
+        ss >> http_version;
         unsigned int status_code = 0;
-        m_ss >> status_code;
+        ss >> status_code;
 
         if (200 != status_code)
         {
             std::string tmp;
-            std::getline(m_ss, tmp);
+            std::getline(ss, tmp);
             err=std::to_string(status_code) + tmp;
             return true;
         }
@@ -33,10 +35,29 @@ namespace NHeadersAnalyzer
         return false;
     }
 
+    bool CHeaders::HeadersRecieved()
+    {
+        if (m_headerEnd)
+            return true;
+
+        auto pos = m_s.find("\r\n\r\n");
+
+        if (pos != std::string::npos)
+        {
+            m_headerEnd = true;
+            m_ostatok = m_s.substr(pos+4);
+        }
+
+        return m_headerEnd;
+    }
+
     void CHeaders::analyze()
     {
+        std::stringstream ss(m_s);
+        m_s.clear();
+
         std::string header;
-        while (std::getline(m_ss, header) && header != "\r")
+        while (std::getline(ss, header) && header != "\r")
         {
             std::string name, value;
             split(header,name,value);
@@ -47,6 +68,11 @@ namespace NHeadersAnalyzer
             }
         }
     }
+
+    std::string CHeaders::GetOstatok()
+    {
+        return  m_ostatok;      
+    }   
 
     NFileTypes::FileTypes CHeaders::GetType() const
     {

@@ -72,11 +72,9 @@ public:
         printf("Message sent\n"); 
 
         
-        const int BUFFSIZE=1024;
-        const int NN=4; //size of CRLFCRLF
-        const std::string ptrn="\r\n\r\n";
-        char buffer[BUFFSIZE+NN+RESERVED] = {0}; 
-        int shft=0;
+        const int BUFFSIZE=41;
+
+        char buffer[BUFFSIZE]; 
         bool headers_recvd = false;
 
         int iResult;
@@ -86,32 +84,26 @@ public:
 
         do {
 
-            //структура : <Headers>CRLFCRLF<Body>
-            //идея: если за 1 раз не дочитали до CRLFCRLF - то, чтоб не пропустить эту последовательность, последние 3 байта предыдущей строки сохраняем вначале 
-            //(buffer+RESERVED), новую порцию считываем в (buffer+RESERVED+shft)
-            //в boost.asio делается проще: async_read_until(..,  "\r\n\r\n",   ...); 
-
-            char *begin = buffer+RESERVED+shft;
-            iResult = recv(sock, begin, BUFFSIZE, 0);        
+            iResult = recv(sock, buffer, BUFFSIZE, 0);        
             if (iResult > 0)
             {
-                begin[iResult]='\0';
                 if (headers_recvd)
                 {
-                    pFile->Write(begin, iResult);
+                    pFile->Write(buffer, iResult);
                 }
                 else
                 {
-                    headers.Add(begin, iResult);
+                    headers.Add(buffer, iResult);
 
                     if (!headers.StatusGot() && headers.BadStatus(err))
                         return false;
 
-                    char *pos=strstr(begin-shft, ptrn.c_str());
-
-                    if (pos)
+                    if (headers.HeadersRecieved())
                     {
-                        headers.Release();                        
+                        headers_recvd = true;
+
+                        headers.Analyze();
+
                         pFile = NFileWrapper::CreateFileWrapper(headers.GetType());
 
                         if (!pFile->Init(m_filename))
@@ -119,15 +111,10 @@ public:
                             err="can't create file";
                             return false;
                         }
-                        pFile->Write(pos+NN, (begin-pos)+iResult-NN);
 
-                        headers_recvd=true;
-                        shft=0;
-                    }
-                    else //не считали весь заголовок
-                    {
-                        strncpy(buffer+RESERVED,begin+iResult-(NN-1),NN-1);//последние 3 байта в начало, чтоб не пропустить \r\n\r\n
-                        shft=NN-1;
+                        std::string s = headers.GetOstatok();
+                        pFile->Write(s.c_str(), s.size());
+
                     }              
                 }                    
             }
@@ -183,6 +170,9 @@ int main(int argc, char const *argv[])
 
     if (argc >=3 )
         filename = argv[2];
+
+    //link = "http://komissionka31.ru/file/8572_%D0%9E%D0%B1%D1%89%D0%B8%D0%B5/184184_%D0%9D%D0%BE%D0%B2%D1%8B%D0%B9_%D1%82%D0%B5%D0%BA%D1%81%D1%82%D0%BE%D0%B2%D1%8B%D0%B9_%D0%B4%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82.txt";
+    //filename = "komiss.txt";
 
     printf("%s %s\n", link.c_str(), filename.c_str()); 
 

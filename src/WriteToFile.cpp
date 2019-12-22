@@ -8,7 +8,7 @@ namespace
     class CFileWrite: public IFileWrapper
     {
     public:
-        void Write(char *str, std::size_t n) override
+        void Write(const char *str, std::size_t n) override
         {
             fwrite(str, n, 1, m_fp);
         }
@@ -19,117 +19,173 @@ namespace
 
 
     //структура файла такая: https://ru.wikipedia.org/wiki/Chunked_transfer_encoding
-    // в начало добавляю CRLF, после этого имею такую структуру: 
-    //[CRLF<HEX>CRLF<Payload>]+CRLF  , произвожу парсинг
-    //0 не нужно особо обрабатывать: это chunk с 0 байт
-
     using pchar =char *;
     class CFileWriteChunked: public IFileWrapper
     {
     public:
         CFileWriteChunked():
-          m_bytes_left(0)
-        , m_prefix("\r\n")
+          m_bytesLeft(0)
         , m_parseError(false)
         {
         }
 
     
-    void Write(char *s, std::size_t n) override   
-    {  
-        if (m_parseError)
+    void Write(const char *s, std::size_t n) override   
+    {          
+        for(std::size_t i=0;;)
         {
-            fwrite(s, n, 1, m_fp);
-            return;
-        }
-
-        const char *sEnd=s+n;
-
-        if (!m_prefix.empty())
-        {
-            s-=m_prefix.size();
-            strncpy(s,m_prefix.c_str(),m_prefix.size());
-            m_prefix.clear();
-        }        
-
-        for(;s != sEnd;)
-        {
-            if (0 == m_bytes_left)
+            if (m_parseError)
             {
-                int status = parseBegin(s,sEnd-s,m_bytes_left);
+                fwrite(s+i, n-i, 1, m_fp);
+                return;
+            }
 
-                if (0 == status)
-                {
-                    m_prefix=s;
+            if (m_readingPayload)
+            {
+                if (readingPayload(s,n,i))
                     return;
-                }
-
-                if (-1 == status)
-                {
-                    m_parseError = true;//всё оставшееся пишем в файл, даже с управляющими байтами
-                    printf("Error in parsing chunked\n");
-                    fwrite(s, n, 1, m_fp);
-
-                    return;
-                }
             }
             else
             {
-                std::size_t nn = std::min(m_bytes_left, (std::size_t)(sEnd-s));
-                fwrite(s, nn, 1, m_fp);
-
-                m_bytes_left -= nn;
-                s+=nn;
-            }    
-        }   
+                if (readingManagedBytes(s,n,i))
+                    return;               
+            }            
+        }  
     }
 
     private:
-        
-        //0 - если паттерн [<HEX><CR>] | [<HEX>]  
-        // иначе -1
-        static int parseBeginPart(const char *s, std::size_t n) 
+        bool readingManagedBytes(const char *s, std::size_t n, std::size_t &i)
         {
-            if (0 == n)
-                return 0;
+            switch(m_crlfRead)
+            {
+                case 0:
+                {
+                    for(;i<n && m_hexNumber.size() <= m_maxHexSize && s[i]!='\r';++i)
+                        m_hexNumber+=s[i];
+                    
+                    if (i == n)
+                        return true;
 
-            if ('\r' == s[n-1])
-                --n;
+                    if(m_hexNumber.size() > m_maxHexSize)
+                    {
+                        processParseError();
+                        return false;
+                    }
+                    
+                    m_crlfRead = 1;
+                    return false;
+                }
+                case 1:
+                {
+                    if (i == n)
+                        return true;
+                    
+                    if (s[i++] != '\r')
+                    {
+                        processParseError();
+                        return false;
+                    }
 
-            std::size_t res;            
-            return  hex_to_ulong(s,n,res) ? 0 : -1;
+                    m_crlfRead = 2;
+                    return false;
+                }
+                 
+                case 2:
+                { 
+                    if (i == n)
+                        return true;
+                    
+                    if (s[i++] != '\n')
+                    {
+                        processParseError();
+                        return false;
+                    }
+
+                    m_crlfRead = 0;
+                    m_readingPayload = true;
+
+                    if (!hex_to_ulong(m_hexNumber.c_str(), m_hexNumber.size(), m_bytesLeft))
+                        processParseError();
+                    else
+                        printf("%s\n", m_hexNumber.c_str());                      
+
+                    m_hexNumber.clear();
+                    return false;                    
+                }
+            }
+
+            return false;
         }
 
-        //<CR><LF><HEX-number><CR><LF>
-        //1 - если мы стоим на начале паттерна. Сдвигаем s на позицию после паттерна, заполняем m_bytes_left     
-        //0 - если мы на "середине" этого паттерна, <CR><LF> например,  m_bytes_left  не меняется
-        //-1 - ошибка, мы не стоим в начале этого паттерна
-        static int parseBegin(pchar &s, std::size_t n, std::size_t &bytes_left)
-        {        
-            if (1 == n)
-                return (*s)=='\r'?0:-1;
+        bool readingPayload(const char *s, std::size_t n, std::size_t &i)
+        {
+            switch(m_crlfRead)
+            {
+                case 0:
+                {
+                    if (i == n)
+                        return true;
 
-            // далее их >=2
-            if ((*s)!='\r' || *(s+1)!='\n')
-                return -1;
+                    std::size_t bytesToFile = std::min(m_bytesLeft, n-i);
 
-            char *s2=strstr(s+1, "\r\n");
+                    if(bytesToFile > 0)
+                        fwrite(s+i, bytesToFile, 1, m_fp);
 
-            if (NULL == s2)
-                return parseBeginPart(s+2, n-2);    
+                    m_bytesLeft -= bytesToFile;
+                    i+=bytesToFile;
 
-            fwrite(s+2,s2-s,1,stdout);     
+                    if (0 == m_bytesLeft)
+                        m_crlfRead = 1;
 
-            if (! hex_to_ulong(s+2,s2-s-2, bytes_left))
-                return -1;
+                    return false;                    
+                }
 
-            s=s2+2;
-            return 1;
+                case 1:
+                {
+                    if (i == n)
+                        return true;
+                    
+                    if (s[i++] != '\r')
+                    {
+                        processParseError();
+                        return false;
+                    }
+
+                    m_crlfRead = 2;
+                    return false;
+                }
+
+                case 2:
+                { 
+                    if (i == n)
+                        return true;
+                    
+                    if (s[i++]!= '\n')
+                    {
+                        processParseError();                        
+                        return false;
+                    }
+
+                    m_crlfRead = 0;
+                    m_readingPayload = false;
+
+                    return false;                    
+                }
+
+            }
+
+            return false;
         }
 
+        void processParseError()
+        {
+            m_parseError = true;
+            printf("Parse Error!!! \n");
+        }
+        
         static bool hex_to_ulong(const char *sz, std::size_t n, std::size_t &res) 
         {
-            if (n<1 || n > RESERVED-BLOCKDELIM)
+            if (n<1 )
                 return false;
 
             std::string s;
@@ -146,9 +202,15 @@ namespace
 
     private:
         
-        std::size_t m_bytes_left; //payload bytes
-        std::string m_prefix;
+        std::size_t m_bytesLeft; //payload bytes
         bool m_parseError;
+
+        ////////////////////////////
+        bool m_readingPayload = false;
+        int m_crlfRead=0;
+        std::string m_hexNumber;
+
+        const unsigned m_maxHexSize=8;
     };
 
 }
