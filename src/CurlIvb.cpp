@@ -106,6 +106,7 @@ public:
                         headers.Analyze();
 
                         pFile = NFileWrapper::CreateFileWrapper(headers.GetType());
+                        headers.Clear();
 
                         if (!pFile->Init(m_filename))
                         {

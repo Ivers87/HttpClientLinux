@@ -12,16 +12,20 @@ namespace NHeadersAnalyzer
     {
         enum ETransferEncoding {Default_=0, Chunked_};
     public:
-        CHeaders():
-        m_transfer_encoding(Default_)
-        , m_gotstatus(false)
-        {}
+        CHeaders()
+        {
+            clear();
+        }
 
 
         //требования: при первом вызове n достаточно большое, чтоб туда влезла 1я строка заголовков: HTTP/1.1 302 Found
         void Add(const char *s, std::size_t n);
         bool BadStatus(std ::string &err);
         void Analyze();
+        void Clear()
+        {
+            clear();
+        }
 
         bool StatusGot() const
         {
@@ -63,14 +67,20 @@ namespace NHeadersAnalyzer
             }
         }
 
+        void clear()
+        {
+            m_transfer_encoding = Default_;
+            m_gotstatus = false;
+            m_s.clear();
+            m_searchPos = 0;
+        }
+
     private:
-        std::string m_s;
-        
+        std::string m_s;        
+        std::size_t m_searchPos;
 
         ETransferEncoding m_transfer_encoding ;
-        bool m_gotstatus;
-
-        std::size_t m_searchPos=0;
+        bool m_gotstatus;        
     };
 }
 

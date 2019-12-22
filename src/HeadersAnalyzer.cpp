@@ -52,7 +52,6 @@ namespace NHeadersAnalyzer
     void CHeaders::Analyze()
     {
         std::stringstream ss(m_s);
-        m_s.clear();
 
         std::string header;
         while (std::getline(ss, header) && header != "\r")
