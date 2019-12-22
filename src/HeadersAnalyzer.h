@@ -21,32 +21,23 @@ namespace NHeadersAnalyzer
         //требования: при первом вызове n достаточно большое, чтоб туда влезла 1я строка заголовков: HTTP/1.1 302 Found
         void Add(const char *s, std::size_t n);
         bool BadStatus(std ::string &err);
-        void Release()
-        {
-            analyze();
-            realise();
-        }
+        void Analyze();
+
         bool StatusGot() const
         {
             return m_gotstatus;
         }      
 
-        NFileTypes::FileTypes GetType() const;
-
-        void Analyze()
+        NFileTypes::FileTypes GetType() const
         {
-            analyze();
-        }
+            if (Chunked_ == m_transfer_encoding)
+                return NFileTypes::Chunked_;
 
-        std::string GetOstatok();
+            return NFileTypes::Common_;
+        }        
 
-        bool HeadersRecieved();
+        bool HeadersRecieved(std::string &);
     private:
-        void analyze();
-        void realise()
-        {
-        }
-
         static void split(const std::string &header, std::string &name, std::string &value)
         {
             std::stringstream s(header);
@@ -78,8 +69,8 @@ namespace NHeadersAnalyzer
 
         ETransferEncoding m_transfer_encoding ;
         bool m_gotstatus;
-        bool m_headerEnd=false;
-        std::string m_ostatok;
+
+        std::size_t m_searchPos=0;
     };
 }
 

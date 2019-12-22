@@ -35,23 +35,21 @@ namespace NHeadersAnalyzer
         return false;
     }
 
-    bool CHeaders::HeadersRecieved()
+    bool CHeaders::HeadersRecieved(std::string &bodyBytes)
     {
-        if (m_headerEnd)
-            return true;
-
-        auto pos = m_s.find("\r\n\r\n");
+        auto pos = m_s.find("\r\n\r\n", m_searchPos);
 
         if (pos != std::string::npos)
         {
-            m_headerEnd = true;
-            m_ostatok = m_s.substr(pos+4);
+            bodyBytes = m_s.substr(pos+4);
+            return true;
         }
 
-        return m_headerEnd;
+        m_searchPos = m_s.size()-3;
+        return false;
     }
 
-    void CHeaders::analyze()
+    void CHeaders::Analyze()
     {
         std::stringstream ss(m_s);
         m_s.clear();
@@ -67,18 +65,5 @@ namespace NHeadersAnalyzer
                 return;
             }
         }
-    }
-
-    std::string CHeaders::GetOstatok()
-    {
-        return  m_ostatok;      
-    }   
-
-    NFileTypes::FileTypes CHeaders::GetType() const
-    {
-        if (Chunked_ == m_transfer_encoding)
-            return NFileTypes::Chunked_;
-
-        return NFileTypes::Common_;
     }
 }

@@ -97,8 +97,9 @@ public:
 
                     if (!headers.StatusGot() && headers.BadStatus(err))
                         return false;
-
-                    if (headers.HeadersRecieved())
+                        
+                    std::string bodyBytes;
+                    if (headers.HeadersRecieved(bodyBytes))
                     {
                         headers_recvd = true;
 
@@ -112,9 +113,7 @@ public:
                             return false;
                         }
 
-                        std::string s = headers.GetOstatok();
-                        pFile->Write(s.c_str(), s.size());
-
+                        pFile->Write(bodyBytes.c_str(), bodyBytes.size());
                     }              
                 }                    
             }
