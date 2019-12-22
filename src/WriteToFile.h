@@ -8,8 +8,6 @@
 
 namespace NFileWrapper
 {
-    const int BLOCKDELIM=4;
-    const int RESERVED=16+BLOCKDELIM; //максимум: 16-значное число в hex в начале chunk-а
     //thread-unsafe!!!
     class IFileWrapper
     {
